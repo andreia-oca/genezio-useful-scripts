@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# This script deletes all projects in Genezio
+# This script deletes all projects in Genezio for the authenticated user
 
 projects=$(genezio list -l |  tr -d " \t," | grep "ID:" | cut -d ":" -f2)
-projects_to_skip=("id_1" "id_2")
+projects_to_skip=("")
 
 counter=0
-skip_count=1
+skip_count=0
 
 for project in $projects
 do

@@ -20,12 +20,35 @@ fi
 USERNAME="${GITHUB_USERNAME}"
 
 if [ -z "$USERNAME" ]; then
-    USERNAME="your-username"
+    USERNAME="andreia-oca"
 fi
 
-# Get the current date and calculate the date from one week ago
-# WARNING: This works on macOS, for Linux use `date -d` instead of `date -v`
-ONE_WEEK_AGO=$(date -v-14d +"%Y-%m-%dT%H:%M:%SZ")
+# Check if an argument is provided
+if [ -z "$1" ]; then
+    echo "Usage: $0 <DAYS_AGO>"
+    exit 1
+fi
+
+DAYS_AGO="$1"
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    DATE_CMD="date -v-${DAYS_AGO}d +\"%Y-%m-%dT%H:%M:%SZ\""
+else
+    # Linux
+    DATE_CMD="date -d \"${DAYS_AGO} days ago\" +\"%Y-%m-%dT%H:%M:%SZ\""
+fi
+
+
+DAYS_AGO_TIMESTAMP=$(eval $DATE_CMD)
+
+if [[ "$DAYS_AGO" -eq 1 ]]; then
+    HUMAN_READABLE_DATE="1 day ago"
+else
+    HUMAN_READABLE_DATE="$DAYS_AGO days ago"
+fi
+
+echo "Fetching repositories created after: $DAYS_AGO_TIMESTAMP"
 
 # Function to delete a GitHub repository
 delete_repo() {
@@ -77,14 +100,14 @@ get_recent_repos() {
     $URL)
 
   # Filter repositories created in the last week
-  echo "$repos" | jq -r --arg ONE_WEEK_AGO "$ONE_WEEK_AGO" '.[] | select(.created_at > $ONE_WEEK_AGO) | .name'
+  echo "$repos" | jq -r --arg DAYS_AGO_TIMESTAMP "$DAYS_AGO_TIMESTAMP" '.[] | select(.created_at > $DAYS_AGO_TIMESTAMP) | .name'
 }
 
 # Fetch repositories created in the last week
 recent_repos=$(get_recent_repos)
 
 if [ -z "$recent_repos" ]; then
-  echo "No repositories created in the last week."
+  echo "No repositories found created since $HUMAN_READABLE_DATE."
   exit 0
 fi
 
